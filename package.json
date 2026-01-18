@@ -1,0 +1,22 @@
+{
+  "name": "claude-code-clone",
+  "version": "1.0.0",
+  "description": "MVP Claude Code clone with agentic loop and sandboxed execution",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": ["claude", "ai", "coding-assistant", "agentic"],
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "express": "^4.21.0",
+    "glob": "^10.3.10",
+    "ws": "^8.16.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
