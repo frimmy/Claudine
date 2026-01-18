@@ -307,7 +307,7 @@ Current working directory contains the sandbox with user files.`;
     iterations++;
 
     const response = await client.messages.create({
-      model: "claude-3-7-sonnet-latest",
+      model: "claude-sonnet-4-5",
       max_tokens: 4096,
       system: systemPrompt,
       tools: tools as any,
