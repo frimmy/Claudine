@@ -23,7 +23,7 @@ author = 567424
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node server.js"
+args = "bun start"
 
 [[workflows.workflow]]
 name = "Project"
