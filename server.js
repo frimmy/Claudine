@@ -38,7 +38,7 @@ def greet(name):
 
 if __name__ == "__main__":
     print(greet("World"))
-`
+`,
   );
 }
 
@@ -209,9 +209,7 @@ function executeTool(name, input) {
 
       case "grep": {
         const results = [];
-        const searchPath = input.path
-          ? resolvePath(input.path)
-          : SANDBOX_DIR;
+        const searchPath = input.path ? resolvePath(input.path) : SANDBOX_DIR;
         const pattern = new RegExp(input.pattern, "gi");
 
         function searchFile(filePath) {
@@ -323,7 +321,7 @@ Current working directory contains the sandbox with user files.`;
             type: "tool_call",
             tool: block.name,
             input: block.input,
-          })
+          }),
         );
 
         // Execute tool
@@ -335,7 +333,7 @@ Current working directory contains the sandbox with user files.`;
             type: "tool_result",
             tool: block.name,
             result,
-          })
+          }),
         );
 
         toolResults.push({
@@ -397,7 +395,7 @@ app.get("/api/files", (req, res) => {
   res.json({ files });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Claude Code Clone running at http://localhost:${PORT}`);
   console.log(`📁 Sandbox directory: ${SANDBOX_DIR}`);
