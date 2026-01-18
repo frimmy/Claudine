@@ -1,11 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
-import express from "express";
-import { WebSocketServer } from "ws";
+import express, { Request, Response } from "express";
+import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
 import { fileURLToPath } from "url";
 import { dirname, join, resolve } from "path";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
-import { execSync, spawn } from "child_process";
+import { execSync } from "child_process";
 import { glob } from "glob";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -42,8 +42,20 @@ if __name__ == "__main__":
   );
 }
 
+interface ToolSchema {
+  type: string;
+  properties: Record<string, any>;
+  required: string[];
+}
+
+interface ToolDefinition {
+  name: string;
+  description: string;
+  input_schema: ToolSchema;
+}
+
 // Tool definitions for Claude
-const tools = [
+const tools: ToolDefinition[] = [
   {
     name: "read",
     description:
@@ -154,7 +166,7 @@ const tools = [
 ];
 
 // Tool implementations
-function resolvePath(relativePath) {
+function resolvePath(relativePath: string) {
   const resolved = resolve(SANDBOX_DIR, relativePath);
   // Security: ensure path stays within sandbox
   if (!resolved.startsWith(SANDBOX_DIR)) {
@@ -163,7 +175,7 @@ function resolvePath(relativePath) {
   return resolved;
 }
 
-function executeTool(name, input) {
+function executeTool(name: string, input: any): any {
   try {
     switch (name) {
       case "read": {
@@ -208,11 +220,11 @@ function executeTool(name, input) {
       }
 
       case "grep": {
-        const results = [];
+        const results: any[] = [];
         const searchPath = input.path ? resolvePath(input.path) : SANDBOX_DIR;
         const pattern = new RegExp(input.pattern, "gi");
 
-        function searchFile(filePath) {
+        function searchFile(filePath: string) {
           try {
             const content = readFileSync(filePath, "utf-8");
             const lines = content.split("\n");
@@ -250,7 +262,7 @@ function executeTool(name, input) {
             maxBuffer: 1024 * 1024,
           });
           return { stdout: result, exitCode: 0 };
-        } catch (err) {
+        } catch (err: any) {
           return {
             stdout: err.stdout || "",
             stderr: err.stderr || err.message,
@@ -262,13 +274,13 @@ function executeTool(name, input) {
       default:
         return { error: `Unknown tool: ${name}` };
     }
-  } catch (err) {
+  } catch (err: any) {
     return { error: err.message };
   }
 }
 
 // Agentic loop
-async function runAgentLoop(userMessage, ws) {
+async function runAgentLoop(userMessage: string, ws: WebSocket) {
   const client = new Anthropic();
 
   const systemPrompt = `You are Claude Code, an agentic coding assistant running in a sandboxed environment.
@@ -283,7 +295,7 @@ IMPORTANT GUIDELINES:
 
 Current working directory contains the sandbox with user files.`;
 
-  const messages = [{ role: "user", content: userMessage }];
+  const messages: any[] = [{ role: "user", content: userMessage }];
 
   // Send initial status
   ws.send(JSON.stringify({ type: "status", content: "Thinking..." }));
@@ -295,17 +307,17 @@ Current working directory contains the sandbox with user files.`;
     iterations++;
 
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-3-5-sonnet-20241022",
       max_tokens: 4096,
       system: systemPrompt,
-      tools,
+      tools: tools as any,
       messages,
     });
 
     // Process the response
     let hasToolUse = false;
-    const assistantContent = [];
-    const toolResults = [];
+    const assistantContent: any[] = [];
+    const toolResults: any[] = [];
 
     for (const block of response.content) {
       if (block.type === "text") {
@@ -363,7 +375,7 @@ Current working directory contains the sandbox with user files.`;
 }
 
 // WebSocket connection handler
-wss.on("connection", (ws) => {
+wss.on("connection", (ws: WebSocket) => {
   console.log("Client connected");
 
   ws.on("message", async (data) => {
@@ -372,7 +384,7 @@ wss.on("connection", (ws) => {
       if (message.type === "chat") {
         await runAgentLoop(message.content, ws);
       }
-    } catch (err) {
+    } catch (err: any) {
       ws.send(JSON.stringify({ type: "error", content: err.message }));
     }
   });
@@ -385,12 +397,12 @@ wss.on("connection", (ws) => {
 // Serve static files and the main page
 app.use(express.static(join(__dirname, "public")));
 
-app.get("/", (req, res) => {
+app.get("/", (_req: Request, res: Response) => {
   res.sendFile(join(__dirname, "public", "index.html"));
 });
 
 // API endpoint to list sandbox files
-app.get("/api/files", (req, res) => {
+app.get("/api/files", (_req: Request, res: Response) => {
   const files = glob.sync("**/*", { cwd: SANDBOX_DIR, nodir: true });
   res.json({ files });
 });
