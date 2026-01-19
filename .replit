@@ -5,25 +5,8 @@ expertMode = true
 [nix]
 channel = "stable-25_05"
 
-[[ports]]
-localPort = 3000
-externalPort = 80
-
-[[ports]]
-localPort = 5000
-externalPort = 80
-
 [workflows]
 runButton = "Project"
-
-[[workflows.workflow]]
-name = "run app "
-mode = "sequential"
-author = 567424
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "bun start"
 
 [[workflows.workflow]]
 name = "Project"
@@ -45,3 +28,11 @@ outputType = "webview"
 task = "shell.exec"
 args = "bun server.ts"
 waitForPort = 5000
+
+[[ports]]
+localPort = 5000
+externalPort = 5000
+
+[[ports]]
+localPort = 8080
+externalPort = 8080

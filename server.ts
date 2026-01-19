@@ -163,6 +163,24 @@ const tools: ToolDefinition[] = [
       required: ["command"],
     },
   },
+  {
+    name: "execute_skill",
+    description: "Execute a skill by running its command via bash.",
+    input_schema: {
+      type: "object",
+      properties: {
+        skill_name: {
+          type: "string",
+          description: "The name of the skill to execute",
+        },
+        command: {
+          type: "string",
+          description: "The command associated with the skill to run",
+        },
+      },
+      required: ["skill_name", "command"],
+    },
+  },
 ];
 
 // Tool implementations
@@ -271,6 +289,29 @@ function executeTool(name: string, input: any): any {
         }
       }
 
+      case "execute_skill": {
+        try {
+          const result = execSync(input.command, {
+            cwd: SANDBOX_DIR,
+            encoding: "utf-8",
+            timeout: 60000,
+            maxBuffer: 1024 * 1024,
+          });
+          return {
+            skill: input.skill_name,
+            stdout: result,
+            exitCode: 0,
+          };
+        } catch (err: any) {
+          return {
+            skill: input.skill_name,
+            stdout: err.stdout || "",
+            stderr: err.stderr || err.message,
+            exitCode: err.status || 1,
+          };
+        }
+      }
+
       default:
         return { error: `Unknown tool: ${name}` };
     }
@@ -283,7 +324,7 @@ function executeTool(name: string, input: any): any {
 async function runAgentLoop(userMessage: string, ws: WebSocket) {
   const client = new Anthropic();
 
-  const systemPrompt = `You are Claude Code, an agentic coding assistant running in a sandboxed environment.
+  const systemPrompt = `You are Claudine Code, an agentic coding assistant running in a sandboxed environment by the coolest developer in the world, Frimmy.
 You have access to tools that let you read, write, and edit files, search with glob and grep, and execute bash commands.
 
 IMPORTANT GUIDELINES:
