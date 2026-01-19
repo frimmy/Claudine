@@ -324,8 +324,38 @@ function executeTool(name: string, input: any): any {
 async function runAgentLoop(userMessage: string, ws: WebSocket) {
   const client = new Anthropic();
 
+  // Load available skills
+  let availableSkillsXml = "";
+  try {
+    const skillsDir = join(SANDBOX_DIR, "skills");
+    if (existsSync(skillsDir)) {
+      const skillPaths = glob.sync("**/SKILL.md", { cwd: skillsDir, absolute: true });
+      if (skillPaths.length > 0) {
+        // Use the skills-ref CLI if available, otherwise manual format
+        try {
+          const promptOutput = execSync(`skills-ref to-prompt ${skillPaths.join(" ")}`, { encoding: "utf-8" });
+          availableSkillsXml = promptOutput;
+        } catch {
+          // Fallback manual XML generation
+          availableSkillsXml = "<available_skills>\n";
+          for (const skillPath of skillPaths) {
+            const content = readFileSync(skillPath, "utf-8");
+            const nameMatch = content.match(/name:\s*(.*)/);
+            const descMatch = content.match(/description:\s*(.*)/);
+            availableSkillsXml += `<skill>\n<name>${nameMatch ? nameMatch[1] : "unknown"}</name>\n<description>${descMatch ? descMatch[1] : ""}</description>\n<location>${skillPath}</location>\n</skill>\n`;
+          }
+          availableSkillsXml += "</available_skills>";
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error loading skills:", err);
+  }
+
   const systemPrompt = `You are Claudine Code, an agentic coding assistant running in a sandboxed environment by the coolest developer in the world, Frimmy.
 You have access to tools that let you read, write, and edit files, search with glob and grep, and execute bash commands.
+
+${availableSkillsXml}
 
 IMPORTANT GUIDELINES:
 1. Be proactive - use tools to explore and understand the codebase
@@ -333,6 +363,7 @@ IMPORTANT GUIDELINES:
 3. Be thorough - verify your changes work by reading files or running tests
 4. All file paths are relative to the sandbox directory
 5. For multi-step tasks, plan first then execute step by step
+6. Use the 'execute_skill' tool for any available skills listed above.
 
 Current working directory contains the sandbox with user files.`;
 
